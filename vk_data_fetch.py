@@ -62,12 +62,13 @@ def GetGroupMembers(api, groupName, offset, count):
                      'home_town',
                      'bdate',
                      'bdate_visibility',
-                     'country',
+                     #'country',
                      'sex',
                      'relation',
                      'first_name',
                      'last_name',
-                     'screen_name')
+                     #'screen_name'
+    )
 
     return api.groups.getMembers(
         group_id=groupName,
@@ -95,11 +96,11 @@ def CalculateTotalRequestsCount(api, maxMembersPerRequest, groupName, totalMembe
 
 def ReadMembersFromFile(filename):
     members = []
-    with open(filename, 'r') as inputFile:
-        try:
+    try:
+        with open(filename, 'r') as inputFile:
             members = json.load(inputFile)
-        except:
-            pass
+    except:
+        pass
     return members
 
 def WriteMembersToFile(filename, members):
