@@ -93,30 +93,52 @@ def CalculateTotalRequestsCount(api, maxMembersPerRequest, groupName, totalMembe
 
     return int(totalMembers / maxMembersPerRequest + 1)
 
-def GetMembers(api, maxMembersPerRequest, groupName):
+def ReadMembersFromFile(filename):
+    members = []
+    with open(filename, 'r') as inputFile:
+        try:
+            members = json.load(inputFile)
+        except:
+            pass
+    return members
+
+def WriteMembersToFile(filename, members):
+    with open(filename, 'w') as outputFile:
+        json.dump(members, outputFile, ensure_ascii=False)
+
+def GetMembers(api, maxMembersPerRequest, groupName, totalRequests, filename):
     '''
-    That function gets all members of the group by chunks of max members per request.
-    It reads all members into memory, because for iteratively write into the file
-    would need reading from a file, modifying JSON and writing to the file.
-    We can use different format liek a CSV, but try to rely on our memory :)
-    Before requesting, we calculate how much requests we must done to get members.
+    That function gets all members of the group by chunks of max members per request
+    and saves it to the file.
     '''
 
-    result = []
+    result = 0
 
-    for count in range(0, 2):
-        members = GetGroupMembers(api,
-                                  groupName=groupName,
-                                  offset=count*maxMembersPerRequest,
-                                  count=5)['items']
+    for count in range(0, totalRequests):
+        response = GetGroupMembers(api,
+                                   groupName=groupName,
+                                   offset=count*maxMembersPerRequest,
+                                   count=maxMembersPerRequest)
+
+        if 'items' not in response:
+            break
+
+        members = response['items']
 
         if len(members) == 0:
+            print('Nothing to save. Exit.')
             break
 
         print('We partially load `{}` members'.format(len(members)))
 
-        [result.append(member) for member in members]
-        time.sleep(1)
+        result += len(members)
+        savedMembers = ReadMembersFromFile(filename)
+        members += savedMembers
+
+        print('Save members to `{}` file...'.format(filename))
+        WriteMembersToFile(filename, members)
+
+        time.sleep(1.5)
 
     return result
 
@@ -126,11 +148,12 @@ def main():
     Get an api for sending requests to the VK.
     Fetch members from group.
     Save members into the file.
+    Before requesting, we calculate how much requests we must done to get members.
     '''
 
     MAX_MEMBERS_PER_REQUEST=1000
     GROUP_NAME='team'
-    JSON_FILE_NAME='vk_members.json'
+    MEMBERS_FILE_NAME='vk_members.json'
 
     print('Creating VK API object for interacting with VK server...')
     api = GetApi()
@@ -145,16 +168,12 @@ def main():
     print('We need `{}` requests to the VK server.'.format(totalRequests))
 
     print('Receive VK members from `{}` group...'.format(GROUP_NAME))
-    members = GetMembers(api, MAX_MEMBERS_PER_REQUEST, GROUP_NAME)
-    print('We load `{}` members'.format(len(members)))
-    if len(members) == 0:
-        print('Nothing to save. Exit.')
-        return
-
-    print('Save members to `{}` file...'.format(JSON_FILE_NAME))
-    with open(JSON_FILE_NAME, 'w') as outputFile:
-        json.dump(members, outputFile, ensure_ascii=False)
-
+    membersCount = GetMembers(api,
+                              MAX_MEMBERS_PER_REQUEST,
+                              GROUP_NAME,
+                              totalRequests,
+                              MEMBERS_FILE_NAME)
+    print('We load `{}` members'.format(membersCount))
     print('Done.')
 
 if __name__ == '__main__':
