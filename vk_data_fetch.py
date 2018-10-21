@@ -116,6 +116,7 @@ def GetMembers(api, maxMembersPerRequest, groupName, totalRequests, filename):
     result = 0
 
     for count in range(0, totalRequests):
+        print('Current request `#{}`'.format(count))
         response = GetGroupMembers(api,
                                    groupName=groupName,
                                    offset=count*maxMembersPerRequest,
@@ -153,7 +154,7 @@ def main():
     '''
 
     MAX_MEMBERS_PER_REQUEST=1000
-    GROUP_NAME='team'
+    GROUP_NAME='reddit'
     MEMBERS_FILE_NAME='vk_members.json'
 
     print('Creating VK API object for interacting with VK server...')
