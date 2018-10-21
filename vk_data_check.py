@@ -16,12 +16,15 @@ def ReadMembersFromFile(filename):
 def main():
     members = ReadMembersFromFile('vk_members.json')
 
+    dups = set()
     d = set()
     for member in members:
         if member['id'] in d:
             print('Warning! Duplicate! {}'.format(member['id']))
-            exit
+            dups.add(member['id'])
         d.add(member['id'])
+
+    print(dups)
 
 if __name__ == '__main__':
     main()
